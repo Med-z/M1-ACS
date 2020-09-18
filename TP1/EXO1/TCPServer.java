@@ -28,16 +28,25 @@ class ServerProcess implements Runnable {
                     "Connexion request from " + client_socket.getInetAddress() + ":" + client_socket.getPort());
 
             ObjectInputStream objinput = new ObjectInputStream(input);
-            // retrieve the data class
-            ClientData data = (ClientData) objinput.readObject();
-            // extract data and gat appropriate message
-            String message = this.getName(data.getLanguage());
             // create DataOutputStream            
             DataOutputStream dataoutput = new DataOutputStream(output);
-            // send the message to the client
-            dataoutput.writeUTF(message);
+            
+            try {
+                // retrieve the data class
+                ClientData data = (ClientData) objinput.readObject();
 
-            System.out.println(data.getLanguage() == Language.ENGLISH);
+                // extract data and gat appropriate message
+                String message = this.getName(data.getLanguage());
+                
+                // send the message to the client
+                dataoutput.writeUTF(message);
+
+                //System.out.println(data.getLanguage() == Language.ENGLISH);
+            } catch (Exception e) {
+                dataoutput.writeUTF(Protocol.ERROR_STRING);
+            }
+            
+            
 
         } catch (Exception e) {
             e.printStackTrace(System.err);
@@ -85,6 +94,7 @@ public class TCPServer {
                 Thread thread = new Thread(new ServerProcess(socket));
                 thread.start();
             }
+            
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }

@@ -1,9 +1,9 @@
+import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-
 
 /**
  * Main client class
@@ -27,20 +27,19 @@ public class TCPClient {
             output = socket.getOutputStream();
             input = socket.getInputStream();
 
-            /*
-             * Insert code here : send a request to the output stream and get a response
-             * from input stream
-             */
-
-            ObjectOutputStream objoutput=new ObjectOutputStream(output);
+            ObjectOutputStream objoutput = new ObjectOutputStream(output);
             // initialise the data
-            ClientData objToSend = new ClientData(Language.ENGLISH);
+            ClientData objToSend = new ClientData(Language.SPANISH);
             // send the object
             objoutput.writeObject(objToSend);
 
 
-            // TODO : not sure
-            //close socket ??
+            // process the responce of the server
+            DataInputStream datainput = new DataInputStream(input);
+            String returnMsg = datainput.readUTF();
+            System.out.println(returnMsg);
+
+            //close the socket
             socket.close();
 
         } catch (Exception e) {
