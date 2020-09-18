@@ -1,6 +1,6 @@
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -28,6 +28,11 @@ class ServerProcess implements Runnable {
 
             // Insert code to process request here : get requests from input stream
             // and send response to output stream
+
+            ObjectInputStream objinput = new ObjectInputStream(input);
+            ClientData data = (ClientData) objinput.readObject();
+            System.out.println(data.getLanguage() == Language.ENGLISH);
+
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
