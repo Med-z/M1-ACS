@@ -1,7 +1,10 @@
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+
 
 /**
  * Main client class
@@ -29,6 +32,12 @@ public class TCPClient {
              * Insert code here : send a request to the output stream and get a response
              * from input stream
              */
+
+            ObjectOutputStream objoutput=new ObjectOutputStream(output);
+            // initialise the data
+            ClientData objToSend = new ClientData(Language.ENGLISH);
+            // send the object
+            objoutput.writeObject(objToSend);
 
         } catch (Exception e) {
             e.printStackTrace(System.err);
