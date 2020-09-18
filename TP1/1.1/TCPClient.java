@@ -2,8 +2,11 @@ import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.UTFDataFormatException;
 import java.net.InetAddress;
 import java.net.Socket;
+
+import javax.sql.rowset.serial.SerialException;
 
 /**
  * Main client class
@@ -36,8 +39,13 @@ public class TCPClient {
 
             // process the responce of the server
             DataInputStream datainput = new DataInputStream(input);
-            String returnMsg = datainput.readUTF();
-            System.out.println(returnMsg);
+            int errCode = datainput.readInt();
+            if (errCode == Protocol.OK) {
+                String returnMsg = datainput.readUTF();
+                System.out.println(returnMsg);
+            } else {
+                System.out.println("Error ; Code : " + errCode);
+            }    
 
             //close the socket
             socket.close();

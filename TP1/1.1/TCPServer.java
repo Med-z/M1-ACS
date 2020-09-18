@@ -38,22 +38,24 @@ class ServerProcess implements Runnable {
                 // extract data and gat appropriate message
                 String message = this.getName(data.getLanguage());
                 
+                //send an error code 
+                dataoutput.writeInt(Protocol.OK);
+
                 // send the message to the client
                 dataoutput.writeUTF(message);
 
                 //System.out.println(data.getLanguage() == Language.ENGLISH);
             } catch (Exception e) {
-                dataoutput.writeUTF(Protocol.ERROR_STRING);
-            }
-            
-            
+                //send an error code 
+                dataoutput.writeInt(Protocol.ERROR_LANG);
+            }          
 
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
     }
 
-    private String getName(Language language) {
+    private String getName(Language language) throws Error{
         // we should consider moving those strings into 
         // static variables
         switch (language) {
@@ -64,7 +66,7 @@ class ServerProcess implements Runnable {
             case SPANISH:
                 return "Antonio";
             default:
-                return Protocol.ERROR_STRING;
+                throw new Error("Langue inconnue");
         }
     }
 }
