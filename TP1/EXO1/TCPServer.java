@@ -1,3 +1,4 @@
+import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
@@ -26,15 +27,35 @@ class ServerProcess implements Runnable {
             System.out.println(
                     "Connexion request from " + client_socket.getInetAddress() + ":" + client_socket.getPort());
 
-            // Insert code to process request here : get requests from input stream
-            // and send response to output stream
-
             ObjectInputStream objinput = new ObjectInputStream(input);
+            // retrieve the data class
             ClientData data = (ClientData) objinput.readObject();
+            // extract data and gat appropriate message
+            String message = this.getName(data.getLanguage());
+            // create DataOutputStream            
+            DataOutputStream dataoutput = new DataOutputStream(output);
+            // send the message to the client
+            dataoutput.writeUTF(message);
+
             System.out.println(data.getLanguage() == Language.ENGLISH);
 
         } catch (Exception e) {
             e.printStackTrace(System.err);
+        }
+    }
+
+    private String getName(Language language) {
+        // we should consider moving those strings into 
+        // static variables
+        switch (language) {
+            case ENGLISH:
+                return "Anthony";
+            case FRENCH:
+                return "Antoine";
+            case SPANISH:
+                return "Antonio";
+            default:
+                return Protocol.ERROR_STRING;
         }
     }
 }
