@@ -13,11 +13,11 @@ public class ClientData implements Serializable {
 
     final private Language language;
 
-    public ClientData(Language language){
+    public ClientData(final Language language) {
         this.language = language;
     }
 
-    public Language getLanguage() {
+    final public Language getLanguage() {
         return language;
     }
     
