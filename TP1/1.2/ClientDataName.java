@@ -4,8 +4,8 @@ public class ClientDataName extends ClientData{
     
     final private String name;
 
-    public ClientDataName(Language language, ServerAction serverAction, String name) {
-        super(language, serverAction);
+    public ClientDataName(Language language, String name) {
+        super(language, ServerAction.HELLO);
         this.name = name;
     }
 
