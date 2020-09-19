@@ -8,17 +8,22 @@ import java.io.Serializable;
  */
 public class ClientData implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
-
+    private static final long serialVersionUID = 2;
+    
     final private Language language;
+    final private int zone;
 
-    public ClientData(final Language language) {
+    public ClientData(final Language language, final int zone) {
         this.language = language;
+        this.zone = zone;
     }
 
     final public Language getLanguage() {
         return language;
     }
-    
+
+    public int getZone() {
+        return zone;
+    }
+   
 }
