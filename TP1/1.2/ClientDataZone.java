@@ -5,8 +5,8 @@ public class ClientDataZone extends ClientData {
 
     final private int zone;
 
-    public ClientDataZone(Language language, String name, ServerAction serverAction, int zone) {
-        super(language, name , serverAction);
+    public ClientDataZone(Language language, ServerAction serverAction, int zone) {
+        super(language, serverAction);
         this.zone = zone;
     }
 

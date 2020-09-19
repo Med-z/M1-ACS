@@ -42,7 +42,9 @@ class ServerProcess implements Runnable {
 
                     System.out.println("Request Hello...");
 
-                    var message = this.getHelloString(data.getLanguage()) + " " + data.getName();
+                    var newData = (ClientDataName) data;
+
+                    var message = this.getHelloString(data.getLanguage()) + " " + newData.getName();
 
                     // send an error code
                     dataoutput.writeInt(Protocol.OK);

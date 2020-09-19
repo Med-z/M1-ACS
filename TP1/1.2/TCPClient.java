@@ -33,7 +33,7 @@ public class TCPClient {
             final var name = "Julien";
             final var language = Language.ENGLISH;
             final var serverAction = ServerAction.TIME;
-            final ClientData objToSend = new ClientDataZone(language, name,serverAction, zone);
+            final ClientData objToSend = new ClientDataZone(language,serverAction, zone);
             // send the object
             objoutput.writeObject(objToSend);
 
