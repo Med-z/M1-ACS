@@ -44,7 +44,7 @@ public class TCPClient {
                 
                 System.out.println("Got Return Code : " + returnCode);
 
-                final ClientData objToSend2 = new ClientDataZone(zone);
+                final ClientData objToSend2 = new ClientDataName(name);
                 // send the object
                 objoutput.writeObject(objToSend2);
                 
@@ -54,6 +54,21 @@ public class TCPClient {
                     System.out.println("Got Return Code : " + returnCode2);
                     final var returnMsg = datainput.readUTF();
                     System.out.println(returnMsg);
+
+                    //third call to server
+                    final ClientData objToSend3 = new ClientDataLanguage(Language.ENGLISH);
+                    objoutput.writeObject(objToSend3);
+                    System.out.println("Got Return Code : " + datainput.readInt());//should check this return code
+                                        
+                    // fourth call to server
+                    objoutput.writeObject(new ClientDataZone(zone));
+                    System.out.println("Got Return Code : " + datainput.readInt());//should check this return code
+                    System.out.println(datainput.readUTF());
+
+                    // fifth and last call to server
+                    objoutput.writeObject(new ClientDataAction(ServerAction.DISCONNECT));
+                    System.out.println("Got Return Code : " + datainput.readInt());//should check this return code                   
+                    
                 } else {
                     System.out.println("Error ; Code : " + returnCode2);
                 }        

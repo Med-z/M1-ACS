@@ -1,8 +1,6 @@
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
@@ -19,6 +17,7 @@ class ServerProcess implements Runnable {
     private Socket client_socket;
 
     private Language languageClient;
+    private boolean isClosed;
 
     public ServerProcess(Socket socket) {
         client_socket = socket;
@@ -27,6 +26,7 @@ class ServerProcess implements Runnable {
         // is at null, this is the first connection for
         // the client.
         this.languageClient = null;
+        this.isClosed = false;
     }
 
     /** main routine */
@@ -38,7 +38,7 @@ class ServerProcess implements Runnable {
             var objinput = new ObjectInputStream(input);
             var dataoutput = new DataOutputStream(output);
             
-            for (int i = 0; i < 2; i++) {
+            do {
                 printWithInfos("Connection");
 
                 if (this.languageClient == null) {
@@ -66,8 +66,10 @@ class ServerProcess implements Runnable {
 
                     handleConnectedRequest(objinput, dataoutput);
                 }
-            }
+            } while(!this.isClosed);
+            //close client socket
             client_socket.close();
+            printWithInfos("Disconnect client");
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
@@ -79,52 +81,37 @@ class ServerProcess implements Runnable {
             // retrieve the data class
             var data = (ClientDataAction) objinput.readObject();
 
-            if (data.getServerAction() == ServerAction.HELLO) {
-
-                printWithInfos("Request Hello...");
-
-                var newData = (ClientDataName) data;
-
-                var message = this.getHelloString() + " " + newData.getName();
-
-                // send an error code
-                dataoutput.writeInt(Protocol.OK);
-
-                // send the message to the client
-                dataoutput.writeUTF(message);
-
-                printWithInfos("Response send to client");
-            } else {
-
-                printWithInfos("Request the time...");
-
-                var newData = (ClientDataZone) data;
-
-                // check if zone is within a correct interval
-                var zone = newData.getZone();
-
-                if (zone > 14 || zone < -12) {
-                    printWithInfos("Error : Incorrect time zone");
-                    // send the appropriate error code
-                    dataoutput.writeInt(Protocol.ERROR_ZONE);
-                } else {
-                    // extract data and get appropriate date
-                    var message = this.getTimeString(zone);
-
+            switch (data.getServerAction()) {
+                case HELLO:
+                    handleHelloRequest(data, dataoutput);  
+                    break;
+                case TIME:
+                    handleTimeRequest(data, dataoutput);
+                    break;
+                case DISCONNECT:
+                    handleDisconnectRequest(dataoutput);
+                    break;
+                case CHANGE_LANG:
+                    handleChangeLangRequest(data, dataoutput);
+                    break;
+                default:
                     // send an error code
-                    dataoutput.writeInt(Protocol.OK);
-
-                    // send the message to the client
-                    dataoutput.writeUTF(message);
-
-                    printWithInfos("Response send to client");
-                }
+                    printWithInfos("Server action incorrect");
+                    dataoutput.writeInt(Protocol.ERROR_SERVER_ACTION);
+                    break;
             }
-        } catch (Exception e) {
-            // send an error code
+        } catch (LanguageUnknownExeption e) { 
             printWithInfos("Error Language unknown");
+            // send an error code
             try {
                 dataoutput.writeInt(Protocol.ERROR_LANG);
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        } catch (Exception e) {
+            printWithInfos("Error Server");
+            try {
+                dataoutput.writeInt(Protocol.ERROR_SERVER);
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
@@ -132,7 +119,69 @@ class ServerProcess implements Runnable {
 
     }
 
-    private String getHelloString() throws Error {
+    private void handleTimeRequest(ClientData data, DataOutputStream dataoutput) throws Exception, LanguageUnknownExeption{
+        
+        printWithInfos("Request the time...");
+
+        var newData = (ClientDataZone) data;
+
+        // check if zone is within a correct interval
+        var zone = newData.getZone();
+
+        if (zone > 14 || zone < -12) {
+            printWithInfos("Error : Incorrect time zone");
+            // send the appropriate error code
+            dataoutput.writeInt(Protocol.ERROR_ZONE);
+        } else {
+            // extract data and get appropriate date
+            var message = this.getTimeString(zone);
+
+            // send an error code
+            dataoutput.writeInt(Protocol.OK);
+
+            // send the message to the client
+            dataoutput.writeUTF(message);
+
+            printWithInfos("Response send to client");
+        }
+    }
+
+    private void handleHelloRequest(ClientData data, DataOutputStream dataoutput) throws Exception, LanguageUnknownExeption{
+        printWithInfos("Request Hello...");
+
+        var newData = (ClientDataName) data;
+
+        var message = this.getHelloString() + " " + newData.getName();
+
+        // send an ok code
+        dataoutput.writeInt(Protocol.OK);
+
+        // send the message to the client
+        dataoutput.writeUTF(message);
+
+        printWithInfos("Response send to client");
+    }
+
+    private void handleDisconnectRequest(DataOutputStream dataoutput) throws Exception, LanguageUnknownExeption{
+        printWithInfos("Request disconnect");
+        
+        this.isClosed = true;
+        //send to client that we diconnect 
+        dataoutput.writeInt(Protocol.OK_DISCONNECT);
+    }
+
+    private void handleChangeLangRequest(ClientData data, DataOutputStream dataoutput) throws Exception, LanguageUnknownExeption{
+        printWithInfos("Request change of language");
+
+        // converts data
+        var newData = (ClientDataLanguage) data;         
+        //asign new language
+        this.languageClient = newData.getLanguage();
+        //send ok status message
+        dataoutput.writeInt(Protocol.OK);
+    }
+
+    private String getHelloString() throws LanguageUnknownExeption {
         // we should consider moving those strings into
         // static variables
         switch (this.languageClient) {
@@ -143,11 +192,11 @@ class ServerProcess implements Runnable {
             case SPANISH:
                 return "Holla";
             default:
-                throw new Error("Langue inconnue");
+                throw new LanguageUnknownExeption();
         }
     }
 
-    private String getTimeString(int zone) throws Error {
+    private String getTimeString(int zone) throws LanguageUnknownExeption {
         // code copy/paste from TP specification
         var dateformatter = new SimpleDateFormat("hh:mm:ss");
         dateformatter.setTimeZone(TimeZone.getTimeZone("GMT+" + zone));
@@ -163,7 +212,7 @@ class ServerProcess implements Runnable {
             case SPANISH:
                 return "Es " + displaytime;
             default:
-                throw new Error("Langue inconnue");
+                throw new LanguageUnknownExeption();
         }
     }
 

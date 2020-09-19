@@ -1,4 +1,4 @@
-public abstract class ClientDataAction extends ClientData{
+public class ClientDataAction extends ClientData{
 
     private static final long serialVersionUID = 1L;    
     

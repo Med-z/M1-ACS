@@ -1,4 +1,6 @@
 public enum ServerAction {
     HELLO,
-    TIME
+    TIME,
+    CHANGE_LANG,
+    DISCONNECT,
 }
