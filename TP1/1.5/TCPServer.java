@@ -7,6 +7,16 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+
+class Counter {    
+    private int count;
+    public Counter(){
+        count = 0;
+    }
+    public void incr(){ count++;}
+    public void decr(){ count--;}
+    public int getCount(){return count;}
+}
 /**
  * Thread lauched for each client
  * 
@@ -18,8 +28,9 @@ class ServerProcess implements Runnable {
 
     private Language languageClient;
     private boolean isClosed;
+    Counter processNumber;
 
-    public ServerProcess(Socket socket) {
+    public ServerProcess(Socket socket, Counter processNumber) {
         client_socket = socket;
         // we use null as "not yet given by the client "
         // and check at every connection; if the value
@@ -27,11 +38,15 @@ class ServerProcess implements Runnable {
         // the client.
         this.languageClient = null;
         this.isClosed = false;
+        this.processNumber = processNumber;
     }
 
     /** main routine */
     @Override
     public void run() {
+        synchronized(this.processNumber){            
+            this.processNumber.incr();
+        }
         try {
             var input = client_socket.getInputStream();
             var output = client_socket.getOutputStream();
@@ -72,11 +87,15 @@ class ServerProcess implements Runnable {
             printWithInfos("Disconnect client");
         } catch (Exception e) {
             e.printStackTrace(System.err);
+        } finally {
+            synchronized(this.processNumber){
+                this.processNumber.decr();
+            }
         }
 
     }
 
-    private void handleConnectedRequest(ObjectInputStream objinput, DataOutputStream dataoutput) {
+    private void handleConnectedRequest(ObjectInputStream objinput, DataOutputStream dataoutput) throws Exception{
         try {
             // retrieve the data class
             var data = (ClientDataAction) objinput.readObject();
@@ -113,8 +132,12 @@ class ServerProcess implements Runnable {
             try {
                 dataoutput.writeInt(Protocol.ERROR_SERVER);
             } catch (IOException ioException) {
+                //this the case where the client has been disconnected
                 ioException.printStackTrace();
-            }
+            } 
+            //retrow the exception so we can update properly the client count 
+            throw e;
+            
         }
 
     }
@@ -228,6 +251,8 @@ class ServerProcess implements Runnable {
  * @author pmeseure
  */
 public class TCPServer {
+
+    
     static public void launch(int port) {
         try {
             ServerSocket listen_socket;
@@ -237,15 +262,26 @@ public class TCPServer {
             listen_socket = new ServerSocket(port, 10 /* ,iplocal */ );
             System.out.println("Server is waiting...");
 
+            var counter = new Counter();
+            final var maxProcess = 2;
             // Infinite loop to get requests sequentially
             while (true) {
                 Socket socket;
                 // get a socket corresponding to the client of the incoming request
                 socket = listen_socket.accept();
                 System.out.println("Connexion request received...");
-                // Create a thread to process the incoming request
-                Thread thread = new Thread(new ServerProcess(socket));
-                thread.start();
+                synchronized(counter){
+                    if (counter.getCount() < maxProcess) {
+                        System.out.println("Got " + counter.getCount() + " connection(s)");
+                        // Create a thread to process the incoming request
+                        Thread thread = new Thread(new ServerProcess(socket, counter));
+                        thread.start();                        
+                    } else {
+                        System.out.println("Too many thread;\nReject connection");
+                        socket.close();
+                    }
+                }
+                
             }
 
         } catch (Exception e) {
