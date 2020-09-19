@@ -31,20 +31,35 @@ public class TCPClient {
             // initialise the data
             final var zone = 12;
             final var name = "Julien";
-            final var language = Language.ENGLISH;
-            final var serverAction = ServerAction.TIME;
-            final ClientData objToSend = new ClientDataZone(language, name,serverAction, zone);
-            // send the object
+            final var language = Language.SPANISH;
+
+            final ClientData objToSend = new ClientDataInit(language);
+            // send the initialisation object
             objoutput.writeObject(objToSend);
 
             // process the responce of the server
-            final DataInputStream datainput = new DataInputStream(input);
-            final int errCode = datainput.readInt();
-            if (errCode == Protocol.OK) {
-                final String returnMsg = datainput.readUTF();
-                System.out.println(returnMsg);
+            final var datainput = new DataInputStream(input);
+            final var returnCode = datainput.readInt();
+            if (returnCode == Protocol.OK_GOT_LANG || returnCode == Protocol.OK) {
+                
+                System.out.println("Got Return Code : " + returnCode);
+
+                final ClientData objToSend2 = new ClientDataZone(zone);
+                // send the object
+                objoutput.writeObject(objToSend2);
+                
+                final var returnCode2 = datainput.readInt();
+
+                if (returnCode2 == Protocol.OK) {
+                    System.out.println("Got Return Code : " + returnCode2);
+                    final var returnMsg = datainput.readUTF();
+                    System.out.println(returnMsg);
+                } else {
+                    System.out.println("Error ; Code : " + returnCode2);
+                }        
+
             } else {
-                System.out.println("Error ; Code : " + errCode);
+                System.out.println("Error ; Code : " + returnCode);
             }
 
             // close the socket

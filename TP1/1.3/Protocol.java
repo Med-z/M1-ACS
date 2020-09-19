@@ -16,8 +16,10 @@ public class Protocol {
 
     //OK STATUS
     static public final int OK = 200;
+    static public final int OK_GOT_LANG = 201;
     //CLIENT ERROR
-    static public final int ERROR_LANG = 400;
+    static public final int ERROR = 400;
+    static public final int ERROR_LANG = 402;
     static public final int ERROR_ZONE = 401;
     //SERVER ERROR
     static public final int ERROR_SERVER = 500;

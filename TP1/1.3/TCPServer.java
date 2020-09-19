@@ -33,35 +33,59 @@ class ServerProcess implements Runnable {
     @Override
     public void run() {
         try {
-            InputStream input = client_socket.getInputStream();
-            OutputStream output = client_socket.getOutputStream();
-            System.out.println(
-                    "Connexion request from " + client_socket.getInetAddress() + ":" + client_socket.getPort());
+            var input = client_socket.getInputStream();
+            var output = client_socket.getOutputStream();
+            var objinput = new ObjectInputStream(input);
+            var dataoutput = new DataOutputStream(output);
+            
+            for (int i = 0; i < 2; i++) {
+                printWithInfos("Connection");
 
-            ObjectInputStream objinput = new ObjectInputStream(input);
-            DataOutputStream dataoutput = new DataOutputStream(output);
+                if (this.languageClient == null) {
+                    // case of first connection
+                    try {
 
-            if (this.languageClient == null) {
+                        printWithInfos("First connection");
 
-            } else {
-                handleConnectedRequest(objinput, dataoutput);
+                        var data = (ClientDataInit) objinput.readObject();
+                        this.languageClient = data.getLanguage();
+
+                        // send confirmation to the client that
+                        // we have the language register and that he
+                        // could send another request
+                        dataoutput.writeInt(Protocol.OK_GOT_LANG);
+
+                        printWithInfos("Language acquired; \nResponse send to client");
+
+                    } catch (Exception e) {
+                        printWithInfos("Error Language unknown (or may be wrong object given)");
+                        dataoutput.writeInt(Protocol.ERROR_LANG);
+                    }
+                } else {
+                    printWithInfos("Known client");
+
+                    handleConnectedRequest(objinput, dataoutput);
+                }
             }
-
+            client_socket.close();
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
+
     }
 
     private void handleConnectedRequest(ObjectInputStream objinput, DataOutputStream dataoutput) {
         try {
             // retrieve the data class
-            ClientData data = (ClientData) objinput.readObject();
+            var data = (ClientDataAction) objinput.readObject();
 
             if (data.getServerAction() == ServerAction.HELLO) {
 
-                System.out.println("Request Hello...");
+                printWithInfos("Request Hello...");
 
-                var message = this.getHelloString(data.getLanguage()) + " " + data.getName();
+                var newData = (ClientDataName) data;
+
+                var message = this.getHelloString() + " " + newData.getName();
 
                 // send an error code
                 dataoutput.writeInt(Protocol.OK);
@@ -69,22 +93,23 @@ class ServerProcess implements Runnable {
                 // send the message to the client
                 dataoutput.writeUTF(message);
 
-                System.out.println("Response send to client");
+                printWithInfos("Response send to client");
             } else {
 
-                System.out.println("Request time...");
+                printWithInfos("Request the time...");
 
                 var newData = (ClientDataZone) data;
+
                 // check if zone is within a correct interval
-                final var zone = newData.getZone();
+                var zone = newData.getZone();
 
                 if (zone > 14 || zone < -12) {
-                    System.out.println("Error : Incorrect time zone");
+                    printWithInfos("Error : Incorrect time zone");
                     // send the appropriate error code
                     dataoutput.writeInt(Protocol.ERROR_ZONE);
                 } else {
                     // extract data and get appropriate date
-                    var message = this.getTimeString(data.getLanguage(), zone);
+                    var message = this.getTimeString(zone);
 
                     // send an error code
                     dataoutput.writeInt(Protocol.OK);
@@ -92,12 +117,12 @@ class ServerProcess implements Runnable {
                     // send the message to the client
                     dataoutput.writeUTF(message);
 
-                    System.out.println("Response send to client");
+                    printWithInfos("Response send to client");
                 }
             }
         } catch (Exception e) {
             // send an error code
-            System.out.println("Error Language unknown");
+            printWithInfos("Error Language unknown");
             try {
                 dataoutput.writeInt(Protocol.ERROR_LANG);
             } catch (IOException ioException) {
@@ -107,10 +132,10 @@ class ServerProcess implements Runnable {
 
     }
 
-    private String getHelloString(Language language) throws Error {
+    private String getHelloString() throws Error {
         // we should consider moving those strings into
         // static variables
-        switch (language) {
+        switch (this.languageClient) {
             case ENGLISH:
                 return "Hello";
             case FRENCH:
@@ -122,15 +147,15 @@ class ServerProcess implements Runnable {
         }
     }
 
-    private String getTimeString(Language language, int zone) throws Error {
+    private String getTimeString(int zone) throws Error {
         // code copy/paste from TP specification
-        SimpleDateFormat dateformatter = new SimpleDateFormat("hh:mm:ss");
+        var dateformatter = new SimpleDateFormat("hh:mm:ss");
         dateformatter.setTimeZone(TimeZone.getTimeZone("GMT+" + zone));
         // zone is the selected time zone
-        Date now = new Date();
-        String displaytime = dateformatter.format(now);
+        var now = new Date();
+        var displaytime = dateformatter.format(now);
 
-        switch (language) {
+        switch (this.languageClient) {
             case ENGLISH:
                 return "It's " + displaytime;
             case FRENCH:
@@ -140,6 +165,11 @@ class ServerProcess implements Runnable {
             default:
                 throw new Error("Langue inconnue");
         }
+    }
+
+    private void printWithInfos(String msg) {
+        System.out.println(new SimpleDateFormat("hh:mm:ss").format(new Date()) + " :: From "
+                + client_socket.getInetAddress() + ":" + client_socket.getPort() + " \n==> " + msg);
     }
 }
 
