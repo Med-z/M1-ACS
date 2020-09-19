@@ -4,6 +4,9 @@ import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * Thread lauched for each client
@@ -28,35 +31,67 @@ class ServerProcess implements Runnable {
                     "Connexion request from " + client_socket.getInetAddress() + ":" + client_socket.getPort());
 
             ObjectInputStream objinput = new ObjectInputStream(input);
-            // create DataOutputStream            
+            // create DataOutputStream
             DataOutputStream dataoutput = new DataOutputStream(output);
-            
+
             try {
                 // retrieve the data class
                 ClientData data = (ClientData) objinput.readObject();
 
-                // extract data and gat appropriate message
-                String message = this.getHelloString(data.getLanguage()) + " " + data.getName();
-                
-                //send an error code 
-                dataoutput.writeInt(Protocol.OK);
+                if (data.getServerAction() == ServerAction.HELLO) {
 
-                // send the message to the client
-                dataoutput.writeUTF(message);
+                    System.out.println("Request Hello...");
 
-                //System.out.println(data.getLanguage() == Language.ENGLISH);
+                    var newData = (ClientDataName) data;
+
+                    var message = this.getHelloString(data.getLanguage()) + " " + newData.getName();
+
+                    // send an error code
+                    dataoutput.writeInt(Protocol.OK);
+
+                    // send the message to the client
+                    dataoutput.writeUTF(message);
+
+                    System.out.println("Response send to client");
+                } else {
+
+                    System.out.println("Request time...");
+
+                    var newData = (ClientDataZone) data;
+                    // check if zone is within a correct interval
+                    final var zone = newData.getZone();
+
+                    if (zone > 14 || zone < -12) {
+                        System.out.println("Error : Incorrect time zone");
+                        // send the appropriate error code
+                        dataoutput.writeInt(Protocol.ERROR_ZONE);
+                    } else {                        
+                        // extract data and get appropriate date
+                        var message = this.getTimeString(data.getLanguage(), zone);
+
+                        // send an error code
+                        dataoutput.writeInt(Protocol.OK);
+
+                        // send the message to the client
+                        dataoutput.writeUTF(message);
+
+                        System.out.println("Response send to client");
+                    }
+                }
+
             } catch (Exception e) {
-                //send an error code 
+                // send an error code
+                System.out.println("Error Language unknown");
                 dataoutput.writeInt(Protocol.ERROR_LANG);
-            }          
+            }
 
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
     }
 
-    private String getHelloString(Language language) throws Error{
-        // we should consider moving those strings into 
+    private String getHelloString(Language language) throws Error {
+        // we should consider moving those strings into
         // static variables
         switch (language) {
             case ENGLISH:
@@ -65,6 +100,26 @@ class ServerProcess implements Runnable {
                 return "Bonjour";
             case SPANISH:
                 return "Holla";
+            default:
+                throw new Error("Langue inconnue");
+        }
+    }
+
+    private String getTimeString(Language language, int zone) throws Error {
+        // code copy/paste from TP specification
+        SimpleDateFormat dateformatter = new SimpleDateFormat("hh:mm:ss");
+        dateformatter.setTimeZone(TimeZone.getTimeZone("GMT+" + zone));
+        // zone is the selected time zone
+        Date now = new Date();
+        String displaytime = dateformatter.format(now);
+
+        switch (language) {
+            case ENGLISH:
+                return "It's " + displaytime;
+            case FRENCH:
+                return "Il est " + displaytime;
+            case SPANISH:
+                return "Es " + displaytime;
             default:
                 throw new Error("Langue inconnue");
         }
@@ -96,7 +151,7 @@ public class TCPServer {
                 Thread thread = new Thread(new ServerProcess(socket));
                 thread.start();
             }
-            
+
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
