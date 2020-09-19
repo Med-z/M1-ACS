@@ -1,2 +1,5 @@
 *.class
 *.log
+*.o
+server
+client
