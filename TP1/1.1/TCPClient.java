@@ -32,7 +32,7 @@ public class TCPClient {
 
             ObjectOutputStream objoutput = new ObjectOutputStream(output);
             // initialise the data
-            ClientData objToSend = new ClientData(Language.SPANISH);
+            ClientData objToSend = new ClientData(Language.ENGLISH, "Antoine");
             // send the object
             objoutput.writeObject(objToSend);
 

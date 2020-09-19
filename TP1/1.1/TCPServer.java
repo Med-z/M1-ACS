@@ -36,7 +36,7 @@ class ServerProcess implements Runnable {
                 ClientData data = (ClientData) objinput.readObject();
 
                 // extract data and gat appropriate message
-                String message = this.getName(data.getLanguage());
+                String message = this.getHelloString(data.getLanguage()) + " " + data.getName();
                 
                 //send an error code 
                 dataoutput.writeInt(Protocol.OK);
@@ -55,16 +55,16 @@ class ServerProcess implements Runnable {
         }
     }
 
-    private String getName(Language language) throws Error{
+    private String getHelloString(Language language) throws Error{
         // we should consider moving those strings into 
         // static variables
         switch (language) {
             case ENGLISH:
-                return "Anthony";
+                return "Hello";
             case FRENCH:
-                return "Antoine";
+                return "Bonjour";
             case SPANISH:
-                return "Antonio";
+                return "Holla";
             default:
                 throw new Error("Langue inconnue");
         }
