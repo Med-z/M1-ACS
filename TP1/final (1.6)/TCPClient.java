@@ -59,6 +59,9 @@ public class TCPClient {
                     final ClientData objToSend3 = new ClientDataLanguage(Language.ENGLISH);
                     objoutput.writeObject(objToSend3);
                     System.out.println("Got Return Code : " + datainput.readInt());//should check this return code
+
+                    //TEMP:
+                    Thread.sleep(5 * 1000);//allow me to start other clients
                                         
                     // fourth call to server
                     objoutput.writeObject(new ClientDataZone(zone));
