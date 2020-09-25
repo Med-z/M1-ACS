@@ -1,11 +1,11 @@
-public class ClientDataName extends ClientDataAction{
+public class ClientDataName extends ClientData{
     
     private static final long serialVersionUID = 1L;
     
     final private String name;
 
     public ClientDataName(String name) {
-        super(ServerAction.HELLO);
+        super();
         this.name = name;
     }
 

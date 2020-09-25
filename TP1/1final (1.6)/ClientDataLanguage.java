@@ -1,11 +1,11 @@
-public class ClientDataLanguage extends ClientDataAction{
+public class ClientDataLanguage extends ClientData{
     
     private static final long serialVersionUID = 1L;
 
     final private Language language;
     
     public ClientDataLanguage(Language language){
-        super(ServerAction.CHANGE_LANG);
+        super();
         this.language = language;
     }
 

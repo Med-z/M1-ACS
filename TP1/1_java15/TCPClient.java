@@ -64,7 +64,7 @@ public class TCPClient {
                     System.out.println(datainput.readUTF());
 
                     // fifth and last call to server
-                    objoutput.writeObject(new ClientDataDiconnect());
+                    objoutput.writeObject(new ClientDataDisconnect());
                     System.out.println("Got Return Code : " + datainput.readInt());//should check this return code                   
                     
                 } else {

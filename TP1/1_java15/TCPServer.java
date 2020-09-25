@@ -63,7 +63,7 @@ class ServerProcess implements Runnable {
                         printWithInfos("First connection");
 
                         var data = (ClientDataInit) objinput.readObject();
-                        this.languageClient = data.getLanguage();
+                        this.languageClient = data.language();
 
                         // send confirmation to the client that
                         // we have the language register and that he
@@ -97,25 +97,20 @@ class ServerProcess implements Runnable {
 
     private void handleConnectedRequest(ObjectInputStream objinput, DataOutputStream dataoutput) throws Exception{
         try {
-            // retrieve the data class
-            var data = (ClientData) objinput.readObject();
+            var data = objinput.readObject();
 
-            //check wich action the client has send
-            if(data instanceof ClientDataName){
-                ClientDataName newData = (ClientDataName) data;
-                handleHelloRequest(newData, dataoutput);  
-            } else if(data instanceof ClientDataZone){
-                ClientDataZone newData = (ClientDataZone) data;
-                handleTimeRequest(newData, dataoutput);  
-            } else if(data instanceof ClientDataDiconnect){
-                handleDisconnectRequest(dataoutput);  
-            } else if(data instanceof ClientDataLanguage){
-                ClientDataLanguage newData = (ClientDataLanguage) data;
-                handleChangeLangRequest(newData, dataoutput);  
-            }else {
-                // send an error code
+            //pattern matching
+            if (data instanceof ClientDataZone dataZone) {
+                handleTimeRequest(dataZone, dataoutput);
+            } else if (data instanceof ClientDataName dataName) {
+                handleHelloRequest(dataName, dataoutput);  
+            } else if (data instanceof ClientDataLanguage dataLang){                
+                handleChangeLangRequest(dataLang, dataoutput);
+            } else if(data instanceof ClientDataDisconnect) {
+                handleDisconnectRequest(dataoutput);
+            } else {
                 printWithInfos("Server action incorrect");
-                dataoutput.writeInt(Protocol.ERROR_SERVER_ACTION);                    
+                dataoutput.writeInt(Protocol.ERROR_SERVER_ACTION);
             }
         } catch (LanguageUnknownExeption e) { 
             printWithInfos("Error Language unknown");
@@ -145,7 +140,7 @@ class ServerProcess implements Runnable {
         printWithInfos("Request the time...");
 
         // check if zone is within a correct interval
-        var zone = data.getZone();
+        var zone = data.zone();
 
         if (zone > 14 || zone < -12) {
             printWithInfos("Error : Incorrect time zone");
@@ -165,11 +160,10 @@ class ServerProcess implements Runnable {
         }
     }
 
-    private void handleHelloRequest(ClientDataName data, DataOutputStream dataoutput)
-            throws Exception, LanguageUnknownExeption {
+    private void handleHelloRequest(ClientDataName data, DataOutputStream dataoutput) throws Exception, LanguageUnknownExeption{
         printWithInfos("Request Hello...");
 
-        var message = this.getHelloString() + " " + data.getName();
+        var message = this.getHelloString() + " " + data.name();
 
         // send an ok code
         dataoutput.writeInt(Protocol.OK);
@@ -190,9 +184,9 @@ class ServerProcess implements Runnable {
 
     private void handleChangeLangRequest(ClientDataLanguage data, DataOutputStream dataoutput) throws Exception, LanguageUnknownExeption{
         printWithInfos("Request change of language");
-       
+        
         //asign new language
-        this.languageClient = data.getLanguage();
+        this.languageClient = data.language();
         //send ok status message
         dataoutput.writeInt(Protocol.OK);
     }

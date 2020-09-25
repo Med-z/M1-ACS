@@ -1,12 +1,12 @@
 
-public class ClientDataZone extends ClientDataAction {
+public class ClientDataZone extends ClientData {
 
     private static final long serialVersionUID = 1L;
 
     final private int zone;
 
     public ClientDataZone(int zone) {
-        super(ServerAction.TIME);
+        super();
         this.zone = zone;
     }
 
