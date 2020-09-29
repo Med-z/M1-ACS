@@ -1,6 +1,5 @@
 package ACS;
 
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.BufferedReader;
@@ -8,6 +7,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
@@ -65,56 +66,74 @@ class ServerProcess implements Runnable {
             this.processNumber.incr();
         }
         try {
-            var input = client_socket.getInputStream();
-            var output = client_socket.getOutputStream();
+            var gson = new GsonBuilder().setPrettyPrinting().create();
 
-            var reader = new BufferedReader(new InputStreamReader(input, "UTF-8"));
-            String line;
-            var complete_string = "";
-            do {
-                line = reader.readLine();
-                if (line != null)
-                    complete_string += line;
-            } while (line != null);
+                     
 
-            System.out.println(complete_string);
+            //client_socket;
 
-            /*
-             * var objinput = new ObjectInputStream(input); var dataoutput = new
-             * DataOutputStream(output);
-             * 
-             * do { printWithInfos("Connection");
-             * 
-             * if (this.languageClient == null) { // case of first connection try {
-             * 
-             * printWithInfos("First connection");
-             * 
-             * var data = (ClientDataInit) objinput.readObject(); this.languageClient =
-             * data.getLanguage();
-             * 
-             * // send confirmation to the client that // we have the language register and
-             * that he // could send another request
-             * dataoutput.writeInt(Protocol.OK_GOT_LANG);
-             * 
-             * printWithInfos("Language acquired; \nResponse send to client");
-             * 
-             * } catch (Exception e) {
-             * printWithInfos("Error Language unknown (or may be wrong object given)");
-             * dataoutput.writeInt(Protocol.ERROR_LANG); } } else {
-             * printWithInfos("Known client");
-             * 
-             * handleConnectedRequest(objinput, dataoutput); } } while(!this.isClosed);
-             */
+            //do {
+                var input = client_socket.getInputStream();
+                var output = client_socket.getOutputStream(); 
+
+                //if(input.available() > 0){
+                    printWithInfos("Connection");
+
+                    
+                    //retrieve the full string 
+                    var reader = new BufferedReader(new InputStreamReader(input, "UTF-8"));
+                    String line;
+                    var complete_string = "";
+                    do {        
+                        line = reader.readLine();    
+                        System.out.println(line);        
+                        if (line != null)
+                            complete_string += line;
+                    } while (line != null);
+
+                    System.out.println(complete_string);
+                
+                    if (this.languageClient == null) {
+                        // case of first connection
+                        try {
+
+                            printWithInfos("First connection");
+
+                            var obj = gson.fromJson(complete_string,ClientDataInit.class); 
+                            //var data = 
+                            this.languageClient = obj.getLanguage();
+
+                            // send confirmation to the client that
+                            // we have the language register and that he
+                            // could send another request
+                            output.write( gson.toJson(new ErrorCode(Protocol.OK)).getBytes("UTF-8"));
+
+                            printWithInfos("Language acquired; \nResponse send to client");
+
+                        } catch (Exception e) {
+                            printWithInfos("Error Language unknown (or may be wrong object given)");
+                            output.write( gson.toJson(new ErrorCode(Protocol.ERROR_LANG)).getBytes("UTF-8"));
+                        }
+                    } else {
+                        printWithInfos("Known client");
+
+                        //handleConnectedRequest(objinput, dataoutput);
+                    }
+                //}
+            //} while(!this.isClosed);
+            
             // close client socket
             client_socket.close();
             printWithInfos("Disconnect client");
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
-        } finally {
-            synchronized (this.processNumber) {
-                this.processNumber.decr();
-            }
+        }catch(    Exception e)    {
+        e.printStackTrace(System.err);
+    }
+    finally
+    {
+        synchronized (this.processNumber) {
+            this.processNumber.decr();
         }
+    }
 
     }
 

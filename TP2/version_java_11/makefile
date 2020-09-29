@@ -12,14 +12,14 @@ all:
 	$(JC) $(JFLAGS) ACS/*.java 
 	
 server: 
-	$(JVM) $(SERVEUR)
+	$(JVM) $(DEP) $(SERVEUR)
 	
 client:
 	$(JVM) $(DEP) $(CLIENT) $(HOST)
 
 demo:
-	$(JVM) $(SERVEUR) &
-	$(JVM) $(CLIENT) $(HOST)
+	$(JVM) $(DEP) $(SERVEUR) &
+	$(JVM) $(DEP) $(CLIENT) $(HOST)
 
 clean:
 	$(RM) ACS/*.class

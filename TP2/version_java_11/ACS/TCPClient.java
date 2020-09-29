@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.Charset;
@@ -52,8 +54,6 @@ public class TCPClient {
      * -change language to english
      * -ask for time with zone = 12
      * -disconnect
-     * @param objoutput
-     * @param datainput
      * @throws Exception
      */
     static void scenario1(OutputStream output, InputStream input) throws Exception{
@@ -67,20 +67,32 @@ public class TCPClient {
 
         // send the initialisation object
         output.write( 
-            gson.toJson(new ClientDataInit(language))
-            .getBytes("UTF-8")
+            gson.toJson(new ClientDataInit(language)).getBytes("UTF-8")
         );
-        
-        /*
 
+        /*PrintWriter writer=new PrintWriter(new OutputStreamWriter(output,"UTF-8"));
+        writer.println(gson.toJson(new ClientDataInit(language)));*/
+        
         // process the responce of the server
-        final var returnCode = datainput.readInt();
+        var reader = new BufferedReader(new InputStreamReader(input, "UTF-8"));
+        String line;
+        var complete_string = "";
+        do {        
+            line = reader.readLine();    
+            System.out.println(line);        
+            if (line != null)
+                complete_string += line;
+        } while (line != null);
+
+        System.out.println(complete_string);
+    
+        var returnCode = 200;
 
         if (returnCode == Protocol.OK_GOT_LANG || returnCode == Protocol.OK) {
             
             System.out.println("Got Return Code : " + returnCode);
             // send the object
-            objoutput.writeObject(new ClientDataName(name));
+            /*objoutput.writeObject(new ClientDataName(name));
             
             final var returnCode2 = datainput.readInt();
 
@@ -106,10 +118,10 @@ public class TCPClient {
             } else {
                 System.out.println("Error ; Code : " + returnCode2);
             }        
-
+            */
         } else {
             System.out.println("Error ; Code : " + returnCode);
-        }*/
+        }
     }
     public static void main(final String[] args) {
         if (args.length != 1) {
